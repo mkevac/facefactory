@@ -17,7 +17,8 @@ class Face(object):
         return "Face (" + self.__str__() + ")"
 
 class FaceAlgorithm(object):
-    pass
+    def __init__(self, name):
+        self.name = name
 
     def findFace(self, imagePath):
         pass

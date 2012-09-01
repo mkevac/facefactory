@@ -6,14 +6,14 @@ import cv
 
 class OpenCV(facealgorithm.FaceAlgorithm):
 
-    def __init__(self, cascade_path):
+    def __init__(self, name, cascade_path):
         self._cascade_path = cascade_path
         self._image_scale = 2
         self._haar_scale = 1.2
         self._min_neighbors = 3
         self._haar_flags = 0
         self._min_size = (20, 20)
-        super(OpenCV, self).__init__()
+        super(OpenCV, self).__init__(name)
 
     def findFace(self, imagePath):
         img = cv.LoadImage(imagePath, 1)

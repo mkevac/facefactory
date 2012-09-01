@@ -5,8 +5,8 @@ import facealgorithm
 import pbs
 
 class LibCCV(facealgorithm.FaceAlgorithm):
-    def __init__(self, bin_path, face_path):
-        super(LibCCV, self).__init__()
+    def __init__(self, name, bin_path, face_path):
+        super(LibCCV, self).__init__(name)
 
         self._bin_path = bin_path
         self._face_path = face_path

@@ -6,13 +6,15 @@ import os, sys
 
 from algorithms.libccv import LibCCV
 from algorithms.opencv import OpenCV
+from algorithms.fse import FSE
 
 from PySide import QtCore, QtGui
 
-algorithms = [LibCCV(bin_path="/Users/marko/Dropbox/projects/ccv/bin", face_path="/Users/marko/Dropbox/projects/ccv/samples/face"),
-              OpenCV(cascade_path="/usr/local/Cellar/opencv/2.4.2/share/OpenCV/haarcascades/haarcascade_frontalface_default.xml")]
-algorithms = algorithms*2
-image_path = "/Users/marko/Dropbox/documents/photos/marko/marko-small.jpg"
+algorithms = [FSE("fse"),
+              LibCCV("libccv", bin_path="/Users/marko/Dropbox/projects/ccv/bin", face_path="/Users/marko/Dropbox/projects/ccv/samples/face"),
+              OpenCV("opencv-default", cascade_path="/usr/local/Cellar/opencv/2.4.2/share/OpenCV/haarcascades/haarcascade_frontalface_default.xml"),
+              OpenCV("opencv-alt", cascade_path="/usr/local/Cellar/opencv/2.4.2/share/OpenCV/haarcascades/haarcascade_frontalface_alt.xml"),
+              OpenCV("opencv-alt2", cascade_path="/usr/local/Cellar/opencv/2.4.2/share/OpenCV/haarcascades/haarcascade_frontalface_alt2.xml")]
 
 images = []
 current_image = None
@@ -46,9 +48,15 @@ class MainWindow(QtGui.QMainWindow):
 
     def setupMenus(self):
         fileMenu = self.menuBar().addMenu("&File")
-        openAction = fileMenu.addAction("&Open...")
+
+        openAction = fileMenu.addAction("&Open dir...")
         openAction.setShortcut("Ctrl+O")
+        openAction.triggered.connect(self.openDir)
+
+        openAction = fileMenu.addAction("&Open image...")
+        openAction.setShortcut("Ctrl+P")
         openAction.triggered.connect(self.openImage)
+
         viewMenu = self.menuBar().addMenu("View")
         fullScreenAction = viewMenu.addAction("&Full screen")
         fullScreenAction.setShortcut("Ctrl+F")
@@ -63,6 +71,18 @@ class MainWindow(QtGui.QMainWindow):
             self.showNormal()
 
     def openImage(self, path=None):
+        if not path:
+            path = QtGui.QFileDialog.getOpenFileName()
+
+        if path:
+
+            global images, current_image
+
+            images = [path[0]]
+
+            self._dialog.loadImage()
+
+    def openDir(self, path=None):
         if not path:
             path = QtGui.QFileDialog.getExistingDirectory()
 
@@ -120,12 +140,14 @@ class Dialog(QtGui.QScrollArea):
         else:
             current_image += 1
 
+        print "current image", current_image
+        print "len", len(images)
+        if current_image >= len(images):
+            return
+
         for widget in self.imagesLayout.widgets:
-            print "unloading widget", widget
             self.imagesLayout.removeWidget(widget)
             widget.deleteLater()
-
-        print "loading image", images[current_image]
 
         pixmap = QtGui.QPixmap()
         if not pixmap.load(images[current_image]):
@@ -151,7 +173,6 @@ class Dialog(QtGui.QScrollArea):
             self.imagesLayout.widgets.append(label)
 
 def main():
-
     app = QtGui.QApplication(sys.argv)
     mw = MainWindow()
     mw.show()

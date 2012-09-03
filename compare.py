@@ -5,15 +5,18 @@ import json
 import pprint
 import sys
 import math
+from PIL import Image
 
 def main():
 
-    if len(sys.argv) < 3:
-        print "usage: %s <origresult> <ourresult>"
+    if len(sys.argv) < 4:
+        print "usage: %s <origresult> <ourresult> <imagespath>"
         sys.exit(1)
+
 
     origresultfilename = sys.argv[1]
     ourresultfilename = sys.argv[2]
+    imagespath = sys.argv[3]
 
     originaldata = {}
 
@@ -33,19 +36,33 @@ def main():
 
     for image, ourimage in ourresult.iteritems():
 
+        imgopened = Image.open(imagespath+"/"+image)
+
+        imgwidth = imgopened.size[0]
+        imgheight = imgopened.size[1]
+
+        imgsize = imgwidth if imgwidth > imgheight else imgheight
+
+        acceptabledistance = imgsize * 0.1
+
         for algresult in ourimage:
 
             try:
                 decision[algresult['algorithm']]
             except KeyError:
-                decision[algresult['algorithm']] = 0
+                decision[algresult['algorithm']] = {'final': 0, 'found_anything': 0, 'found_more_than_one': 0,
+                                                    'at_least_one_right': 0, 'found_nothing': 0}
 
             if len(algresult['faces']) == 0:
-                decision[algresult['algorithm']] -= 0.5
+                decision[algresult['algorithm']]['final'] -= 0.5
+                decision[algresult['algorithm']]['found_nothing'] += 1
                 continue
 
             if len(algresult['faces']) > 1:
-                decision[algresult['algorithm']] -= 0.1
+                decision[algresult['algorithm']]['final'] -= 0.5
+                decision[algresult['algorithm']]['found_more_than_one'] += 1
+
+            decision[algresult['algorithm']]['found_anything'] += 1
 
             found = False
 
@@ -60,18 +77,14 @@ def main():
                 originalsquarecenter = (origimage['x'] + origimage['width']/2, origimage['y'] + origimage['height']/2)
 
                 distance = math.sqrt(pow((oursquarecenter[0]-originalsquarecenter[0]), 2) + pow((oursquarecenter[1]-originalsquarecenter[1]), 2))
-                if distance <= 70.0:
-                    print "image '%s': distance is smaller than 70pix (%d) -> ok" % (image, distance)
+                if distance <= acceptabledistance:
                     found = True
-                else:
-                    print "image '%s': distance is bigger than 70pix (%d) -> bad" % (image, distance)
 
             if found:
-                decision[algresult['algorithm']] += 1
-            else:
-                decision[algresult['algorithm']] -= 0.5
+                decision[algresult['algorithm']]['final'] += 1.5
+                decision[algresult['algorithm']]['at_least_one_right'] += 1
 
-    print decision
+    pprint.pprint(decision)
 
 if __name__ == "__main__":
     main()
